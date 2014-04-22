@@ -40,7 +40,7 @@ class LogStash::Inputs::Stomp < LogStash::Inputs::Base
   def connect
     begin
       if @clientid
-        @client.connect headers={'client-id' => @clientid}
+        @client.connect( headers => {'client-id' => @clientid} )
       else
         @client.connect
       end
