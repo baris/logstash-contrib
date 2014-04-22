@@ -22,6 +22,9 @@ class LogStash::Inputs::Stomp < LogStash::Inputs::Base
   # The password to authenticate with.
   config :password, :validate => :password, :default => ""
 
+  # The client-id header to be used at connect.
+  config :clientid, :validate => :string, :default => nil
+
   # The destination to read events from.
   #
   # Example: "/topic/logstash"
@@ -36,7 +39,11 @@ class LogStash::Inputs::Stomp < LogStash::Inputs::Base
   private
   def connect
     begin
-      @client.connect
+      if @clientid
+        @client.connect headers={'client-id' => @clientid}
+      else
+        @client.connect
+      end
       @logger.debug("Connected to stomp server") if @client.connected?
     rescue => e
       @logger.debug("Failed to connect to stomp server, will retry", :exception => e, :backtrace => e.backtrace)
@@ -52,7 +59,7 @@ class LogStash::Inputs::Stomp < LogStash::Inputs::Base
     @client.host = @vhost if @vhost
     @stomp_url = "stomp://#{@user}:#{@password}@#{@host}:#{@port}/#{@destination}"
 
-    # Handle disconnects 
+    # Handle disconnects
     @client.on_connection_closed {
       connect
       subscription_handler # is required for re-subscribing to the destination
@@ -79,7 +86,7 @@ class LogStash::Inputs::Stomp < LogStash::Inputs::Base
 
   public
   def run(output_queue)
-    @output_queue = output_queue 
+    @output_queue = output_queue
     subscription_handler
   end # def run
 end # class LogStash::Inputs::Stomp
